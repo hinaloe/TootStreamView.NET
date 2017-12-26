@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="Entities\Account.cs" />
     <Compile Include="Entities\Application.cs" />
+    <Compile Include="Entities\Attachment.cs" />
     <Compile Include="Entities\Mention.cs" />
     <Compile Include="Entities\Status.cs" />
     <Compile Include="Entities\StreamEvent.cs" />
