@@ -43,7 +43,7 @@ namespace TootStreamView
                 param["access_token"] = token;
             }
 
-            var uri = new UriBuilder("wss", domain, 443, "/api/v1/streaming", $"?{buildQuery(param)}").Uri;
+            var uri = new UriBuilder("wss", domain, 443, "/api/v1/streaming", $"?{BuildQuery(param)}").Uri;
 
             Console.WriteLine(uri);
 
@@ -64,7 +64,7 @@ namespace TootStreamView
                         switch (ev.Event)
                         {
                             case "update":
-                                printStatus(parseStatus(ev.Payload));
+                                PrintStatus(ParseStatus(ev.Payload));
                                 break;
                             default:
                                 Console.WriteLine("{0}: {1}", ev.Event, ev.Payload);
@@ -84,17 +84,17 @@ namespace TootStreamView
             }
         }
 
-        static Status parseStatus(string payload)
+        static Status ParseStatus(string payload)
         {
             return JsonConvert.DeserializeObject<Status>(payload);
         }
 
-        static void printStatus(Status status)
+        static void PrintStatus(Status status)
         {
             Console.WriteLine("@{0}: {1}", status.Account.AccountName, status.Content);
         }
 
-        private static string buildQuery(NameValueCollection nvc)
+        private static string BuildQuery(NameValueCollection nvc)
         {
             return string.Join("&", Array.ConvertAll(nvc.AllKeys, key => $"{WebUtility.UrlEncode(key)}={WebUtility.UrlEncode(nvc[key])}"));
         }
