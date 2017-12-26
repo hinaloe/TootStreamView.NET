@@ -51,12 +51,20 @@ namespace TootStreamView
             try
             {
                 await ws.ConnectAsync(uri, CancellationToken.None);
-                var buff = new ArraySegment<byte>(new byte[MessageBufferSize]);
                 while (ws.State == WebSocketState.Open)
                 {
-                    var ret = await ws.ReceiveAsync(buff, CancellationToken.None);
+                    WebSocketReceiveResult ret;
+                    var bu = new byte[0];
+                    do
+                    {
+                        var buff = new ArraySegment<byte>(new byte[MessageBufferSize]);
 
-                    var data = new UTF8Encoding().GetString(buff.Take(ret.Count).ToArray());
+                        ret = await ws.ReceiveAsync(buff, CancellationToken.None);
+
+                        bu = bu.Concat(buff.Take(ret.Count).ToArray()).ToArray();
+                    } while (!ret.EndOfMessage);
+
+                    var data = new UTF8Encoding().GetString(bu);
 
                     try
                     {
@@ -96,7 +104,8 @@ namespace TootStreamView
 
         private static string BuildQuery(NameValueCollection nvc)
         {
-            return string.Join("&", Array.ConvertAll(nvc.AllKeys, key => $"{WebUtility.UrlEncode(key)}={WebUtility.UrlEncode(nvc[key])}"));
+            return string.Join("&",
+                Array.ConvertAll(nvc.AllKeys, key => $"{WebUtility.UrlEncode(key)}={WebUtility.UrlEncode(nvc[key])}"));
         }
     }
 }
