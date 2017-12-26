@@ -84,12 +84,12 @@ namespace TootStreamView
             }
         }
 
-        static Status ParseStatus(string payload)
+        private static Status ParseStatus(string payload)
         {
             return JsonConvert.DeserializeObject<Status>(payload);
         }
 
-        static void PrintStatus(Status status)
+        private static void PrintStatus(Status status)
         {
             Console.WriteLine("@{0}: {1}", status.Account.AccountName, status.Content);
         }
