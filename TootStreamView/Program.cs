@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
+using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -12,15 +13,15 @@ namespace TootStreamView
 {
     internal class Program
     {
-        const string DefaultDomain = "mstdn.maud.io";
+        private const string DefaultDomain = "mstdn.maud.io";
 
         /// <summary>
         /// Send message buffer size.
         /// </summary>
-        const int MessageBufferSize = 4096;
+        private const int MessageBufferSize = 4096;
 
 
-        async public static Task Main(string[] args)
+        public static async Task Main(string[] args)
         {
             Console.WriteLine("Input instance domain [{0}]", DefaultDomain);
             var domain = Console.ReadLine();
@@ -36,8 +37,13 @@ namespace TootStreamView
                 token = Console.ReadLine();
             } while (string.IsNullOrEmpty(token));
 
-            var uri = new UriBuilder("wss", domain, 443, "/api/v1/streaming", $"?access_token={token}&stream=public")
-                .Uri;
+            var param = new NameValueCollection {["stream"] = "public"};
+            if (!string.IsNullOrEmpty(token))
+            {
+                param["access_token"] = token;
+            }
+
+            var uri = new UriBuilder("wss", domain, 443, "/api/v1/streaming", $"?{buildQuery(param)}").Uri;
 
             Console.WriteLine(uri);
 
@@ -52,15 +58,22 @@ namespace TootStreamView
 
                     var data = new UTF8Encoding().GetString(buff.Take(ret.Count).ToArray());
 
-                    var ev = JsonConvert.DeserializeObject<StreamEvent>(data);
-                    switch (ev.Event)
+                    try
                     {
-                        case "update":
-                            printStatus(parseStatus(ev.Payload));
-                            break;
-                        default:
-                            Console.WriteLine("{0}: {1}", ev.Event, ev.Payload);
-                            break;
+                        var ev = JsonConvert.DeserializeObject<StreamEvent>(data);
+                        switch (ev.Event)
+                        {
+                            case "update":
+                                printStatus(parseStatus(ev.Payload));
+                                break;
+                            default:
+                                Console.WriteLine("{0}: {1}", ev.Event, ev.Payload);
+                                break;
+                        }
+                    }
+                    catch (JsonReaderException ex)
+                    {
+                        Console.Error.WriteLine("JSON Parse Error: {0} {1} RAW:{2}", ex.Message, ex.StackTrace, data);
                     }
                 }
                 Console.WriteLine("Closed?");
@@ -79,6 +92,11 @@ namespace TootStreamView
         static void printStatus(Status status)
         {
             Console.WriteLine("@{0}: {1}", status.Account.AccountName, status.Content);
+        }
+
+        private static string buildQuery(NameValueCollection nvc)
+        {
+            return string.Join("&", Array.ConvertAll(nvc.AllKeys, key => $"{WebUtility.UrlEncode(key)}={WebUtility.UrlEncode(nvc[key])}"));
         }
     }
 }
